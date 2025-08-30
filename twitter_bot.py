@@ -2,7 +2,6 @@ import subprocess
 import time
 import requests
 import os
-import json
 
 # 1. Run quote.js using Node
 subprocess.run(["node", "quote.js"])
@@ -14,26 +13,22 @@ with open("quotes.txt", "r") as f:
 # pick last 2 quotes
 quotes_to_post = quotes[-2:]
 
-# 3. Load refresh token from file
-with open("refresh_token.json", "r") as f:
-    tokens = json.load(f)
-
-REFRESH_TOKEN = tokens["refresh_token"]
-CLIENT_ID = "YOUR_CLIENT_ID"
-CLIENT_SECRET = "YOUR_CLIENT_SECRET"
+# 3. Read secrets from GitHub Actions environment
+CLIENT_ID = os.environ["TWITTER_CLIENT_ID"]
+CLIENT_SECRET = os.environ["TWITTER_CLIENT_SECRET"]
+REFRESH_TOKEN = os.environ["TWITTER_REFRESH_TOKEN"]
 TOKEN_URL = "https://api.twitter.com/2/oauth2/token"
 
-# 4. Refresh access token automatically
+# 4. Refresh access token
 def refresh_access_token():
     data = {
         "grant_type": "refresh_token",
         "refresh_token": REFRESH_TOKEN,
         "client_id": CLIENT_ID,
     }
-    response = requests.post(TOKEN_URL, data=data)
+    response = requests.post(TOKEN_URL, data=data, auth=(CLIENT_ID, CLIENT_SECRET))
+    response.raise_for_status()
     new_tokens = response.json()
-    with open("refresh_token.json", "w") as f:
-        json.dump(new_tokens, f)
     return new_tokens["access_token"]
 
 ACCESS_TOKEN = refresh_access_token()
