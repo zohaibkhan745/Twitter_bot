@@ -11,6 +11,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Update refresh token in GitHub Secrets
+        if: success()
+        run: |
+          if [ -f new_refresh_token.json ]; then
+            NEW_TOKEN=$(cat new_refresh_token.json | jq -r '.refresh_token')
+            echo "Updating GitHub Secret..."
+            gh secret set TWITTER_REFRESH_TOKEN --body "$NEW_TOKEN"
+          fi  
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # Checkout code
       - name: Checkout repo
         uses: actions/checkout@v3
